@@ -13,16 +13,22 @@ import queue
 class WhisperManager:
     """Manages Whisper model loading, inference, and resource management."""
     
-    def __init__(self, event_bus):
+    def __init__(self, event_bus, config_manager=None):
         self.event_bus = event_bus
+        self.config_manager = config_manager
         self.logger = logging.getLogger(__name__)
         
-        # Model configuration
+        # Initialize with defaults, will be overridden by config if available
         self.model_size = "small"
         self.device = "auto"
         self.compute_type = "float16"
         self.unload_timeout = 300  # 5 minutes
         self.language = "auto"
+        self.temperature = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
+        self.beam_size = 5
+        self.compression_ratio_threshold = 2.4
+        self.logit_threshold = -1.0
+        self.no_speech_threshold = 0.6
         
         # Model state
         self.model = None
@@ -40,13 +46,31 @@ class WhisperManager:
         self.event_bus.subscribe('audio_chunk', self._on_audio_chunk)
         self.event_bus.subscribe('transcription_start', self._on_start_transcription)
         self.event_bus.subscribe('transcription_stop', self._on_stop_transcription)
+        
+        # Load configuration if provided
+        if config_manager:
+            self._load_config()
+    
+    def _load_config(self):
+        """Load configuration values."""
+        if self.config_manager:
+            self.model_size = self.config_manager.get('model_size', 'small')
+            self.device = self.config_manager.get('device', 'auto')
+            self.compute_type = self.config_manager.get('compute_type', 'float16')
+            self.unload_timeout = self.config_manager.get('unload_timeout', 300)
+            self.language = self.config_manager.get('language', 'auto')
+            self.temperature = self.config_manager.get('temperature', [0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+            self.beam_size = self.config_manager.get('beam_size', 5)
+            self.compression_ratio_threshold = self.config_manager.get('compression_ratio_threshold', 2.4)
+            self.logit_threshold = self.config_manager.get('logit_threshold', -1.0)
+            self.no_speech_threshold = self.config_manager.get('no_speech_threshold', 0.6)
     
     def initialize(self):
         """Initialize the model manager."""
         self.logger.info("Initializing Whisper model manager")
         
-        # Load initial configuration
-        # Note: In a real implementation, this would come from config manager
+        # Load configuration
+        self._load_config()
         self.logger.info("Whisper model manager initialized")
     
     def load_model(self):
@@ -210,15 +234,15 @@ class WhisperManager:
                 import librosa
                 audio_data = librosa.resample(audio_data.astype(np.float32), orig_sr=sample_rate, target_sr=16000)
             
-            # Perform transcription
+            # Perform transcription with configurable parameters
             segments, info = self.model.transcribe(
                 audio_data,
-                beam_size=5,
+                beam_size=self.beam_size,
                 language=self.language,
-                temperature=self._get_temperature(),
-                compression_ratio_threshold=2.4,
-                logprob_threshold=-1.0,
-                no_speech_threshold=0.6
+                temperature=self.temperature,
+                compression_ratio_threshold=self.compression_ratio_threshold,
+                logprob_threshold=self.logit_threshold,
+                no_speech_threshold=self.no_speech_threshold
             )
             
             # Combine all segments
@@ -234,8 +258,8 @@ class WhisperManager:
     
     def _get_temperature(self) -> list:
         """Get temperature settings for transcription."""
-        # Using a range of temperatures for better results
-        return [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
+        # Using configurable temperatures
+        return self.temperature
     
     def shutdown(self):
         """Shutdown the model manager."""

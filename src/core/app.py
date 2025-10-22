@@ -23,7 +23,7 @@ class TranscriptionApp:
         
         # Initialize subsystems
         self.microphone_manager = MicrophoneManager(self.event_bus)
-        self.whisper_manager = WhisperManager(self.event_bus)
+        self.whisper_manager = WhisperManager(self.event_bus, self.config)
         self.hotkey_manager = HotkeyManager(self.event_bus)
         self.overlay = OverlayWindow(self.event_bus)
         

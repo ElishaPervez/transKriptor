@@ -27,22 +27,25 @@ A desktop-wide transcription assistant powered by the Whisper model that activat
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 
-3. Install the required dependencies:
+3. **Important: For RTX 50 series support**, you must install PyTorch with CUDA 12.8+ support:
+   ```bash
+   # RTX 50 series requires PyTorch nightly builds with CUDA 12.8+
+   pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu128
+   ```
+   
+   For older GPUs, install a compatible PyTorch version:
+   ```bash
+   # For CUDA 11.8
+   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+
+   # For CUDA 12.1  
+   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+   ```
+
+4. Install the remaining required dependencies:
    ```bash
    pip install -r requirements.txt
    ```
-
-4. For GPU acceleration (recommended), ensure you have:
-   - CUDA-compatible GPU
-   - Properly installed NVIDIA drivers
-   - Compatible PyTorch build with CUDA support:
-     ```bash
-     # For CUDA 11.8
-     pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-
-     # For CUDA 12.1
-     pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
-     ```
 
 ## Usage
 

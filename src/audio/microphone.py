@@ -13,15 +13,15 @@ import sounddevice as sd
 class MicrophoneManager:
     """Manages microphone input and audio processing."""
     
-    def __init__(self, event_bus):
+    def __init__(self, event_bus, target_sample_rate=16000):
         self.event_bus = event_bus
         self.logger = logging.getLogger(__name__)
         
         # Audio configuration
-        self.sample_rate = 16000  # Standard for Whisper
+        self.target_sample_rate = target_sample_rate  # Standard for Whisper
         self.channels = 1  # Mono
         self.chunk_duration = 0.5  # 500ms chunks
-        self.chunk_size = int(self.sample_rate * self.chunk_duration)
+        self.chunk_size = int(self.target_sample_rate * self.chunk_duration)
         
         # Audio state
         self.is_capturing = False
@@ -30,6 +30,7 @@ class MicrophoneManager:
         self.audio_queue = queue.Queue()
         self.capture_thread = None
         self.device_id = None
+        self.device_sample_rate = None  # Actual sample rate of the device
         
         # Voice activity detection
         self.vad_enabled = True
@@ -47,8 +48,8 @@ class MicrophoneManager:
         try:
             default_device = sd.query_devices(kind='input')
             self.device_id = default_device['index']
-            self.sample_rate = int(default_device['default_samplerate'])
-            self.logger.info(f"Using audio device: {default_device['name']} (ID: {self.device_id})")
+            self.device_sample_rate = int(default_device['default_samplerate'])
+            self.logger.info(f"Using audio device: {default_device['name']} (ID: {self.device_id}) at {self.device_sample_rate}Hz")
         except Exception as e:
             self.logger.error(f"Could not get default audio device: {e}")
             # Fallback to first available input device
@@ -56,8 +57,8 @@ class MicrophoneManager:
             for i, device in enumerate(devices):
                 if device['max_input_channels'] > 0:
                     self.device_id = i
-                    self.sample_rate = int(device['default_samplerate'])
-                    self.logger.info(f"Using fallback audio device: {device['name']} (ID: {i})")
+                    self.device_sample_rate = int(device['default_samplerate'])
+                    self.logger.info(f"Using fallback audio device: {device['name']} (ID: {i}) at {self.device_sample_rate}Hz")
                     break
             else:
                 raise RuntimeError("No input audio devices found")
@@ -72,10 +73,10 @@ class MicrophoneManager:
             
         self.logger.info("Starting audio capture")
         
-        # Create and start the audio stream
+        # Create and start the audio stream - use device's native sample rate
         try:
             self.stream = sd.InputStream(
-                samplerate=self.sample_rate,
+                samplerate=self.device_sample_rate,
                 blocksize=self.chunk_size,
                 channels=self.channels,
                 dtype='float32',
@@ -137,6 +138,8 @@ class MicrophoneManager:
     
     def _process_audio(self):
         """Process audio chunks in a separate thread."""
+        import librosa  # Import here to avoid issues during initialization
+        
         while self.is_capturing:
             try:
                 # Get audio data from queue
@@ -146,10 +149,18 @@ class MicrophoneManager:
                 if self.vad_enabled and not self._is_voice_present(audio_chunk):
                     continue
                 
+                # Resample to target sample rate (16kHz) if needed
+                if self.device_sample_rate != self.target_sample_rate:
+                    audio_chunk = librosa.resample(
+                        audio_chunk.astype(np.float32),
+                        orig_sr=self.device_sample_rate,
+                        target_sr=self.target_sample_rate
+                    )
+                
                 # Publish audio chunk for transcription
                 self.event_bus.publish('audio_chunk', {
                     'data': audio_chunk,
-                    'sample_rate': self.sample_rate,
+                    'sample_rate': self.target_sample_rate,  # Always 16000Hz after resampling
                     'timestamp': time.time()
                 })
                 
