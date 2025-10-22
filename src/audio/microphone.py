@@ -138,16 +138,13 @@ class MicrophoneManager:
     
     def _process_audio(self):
         """Process audio chunks in a separate thread."""
-        import librosa  # Import here to avoid issues during initialization
+        # Import librosa once at the start of the thread
+        import librosa
         
         while self.is_capturing:
             try:
                 # Get audio data from queue
                 audio_chunk = self.audio_queue.get(timeout=0.1)
-                
-                # Apply voice activity detection if enabled
-                if self.vad_enabled and not self._is_voice_present(audio_chunk):
-                    continue
                 
                 # Resample to target sample rate (16kHz) if needed
                 if self.device_sample_rate != self.target_sample_rate:
@@ -158,6 +155,7 @@ class MicrophoneManager:
                     )
                 
                 # Publish audio chunk for transcription
+                # VAD will be handled by the whisper model
                 self.event_bus.publish('audio_chunk', {
                     'data': audio_chunk,
                     'sample_rate': self.target_sample_rate,  # Always 16000Hz after resampling

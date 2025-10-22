@@ -29,6 +29,7 @@ class WhisperManager:
         self.compression_ratio_threshold = 2.4
         self.logit_threshold = -1.0
         self.no_speech_threshold = 0.6
+        self.use_faster_whisper_vad = True
         
         # Model state
         self.model = None
@@ -64,6 +65,7 @@ class WhisperManager:
             self.compression_ratio_threshold = self.config_manager.get('compression_ratio_threshold', 2.4)
             self.logit_threshold = self.config_manager.get('logit_threshold', -1.0)
             self.no_speech_threshold = self.config_manager.get('no_speech_threshold', 0.6)
+            self.use_faster_whisper_vad = self.config_manager.get('use_faster_whisper_vad', True)
     
     def initialize(self):
         """Initialize the model manager."""
@@ -235,6 +237,7 @@ class WhisperManager:
                 audio_data = librosa.resample(audio_data.astype(np.float32), orig_sr=sample_rate, target_sr=16000)
             
             # Perform transcription with configurable parameters
+            # Use faster-whisper's built-in VAD if enabled in config
             segments, info = self.model.transcribe(
                 audio_data,
                 beam_size=self.beam_size,
@@ -242,7 +245,9 @@ class WhisperManager:
                 temperature=self.temperature,
                 compression_ratio_threshold=self.compression_ratio_threshold,
                 logprob_threshold=self.logit_threshold,
-                no_speech_threshold=self.no_speech_threshold
+                no_speech_threshold=self.no_speech_threshold,
+                vad_filter=self.config_manager.get('use_faster_whisper_vad', True),  # Use faster-whisper's VAD
+                word_timestamps=False  # Can be enabled if needed
             )
             
             # Combine all segments

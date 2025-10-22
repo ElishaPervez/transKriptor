@@ -1,9 +1,5 @@
-# Core dependencies
+# Core dependencies (PyTorch must be installed separately for RTX 50 series support)
 numpy>=1.21.0
-# For RTX 50 series support, install PyTorch nightly or build from source with CUDA 12.8+
-# Example: pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu128
-torch>=2.0.0 
-
 faster-whisper>=1.0.0  # Updated version with better compatibility
 transformers>=4.21.0
 tokenizers>=0.12.1
@@ -32,12 +28,12 @@ tensorrt>=10.0.0; sys_platform == "win32"
 # Audio processing
 librosa>=0.10.0
 
-# Installation notes for RTX 50 series support:
-# For RTX 50 series (Blackwell architecture), standard PyTorch releases do not yet include support
-# You will need to:
-# 1. Use PyTorch nightly builds with CUDA 12.8+ support
-# 2. OR build PyTorch from source with CUDA 12.8+
-# 3. OR wait for official support in PyTorch 2.8+ (expected release)
-
-# For CUDA 12.8 PyTorch nightly (example command):
+# IMPORTANT: PyTorch installation for RTX 50 series
+# For RTX 50 series (Blackwell architecture), standard PyTorch releases do not include support
+# You MUST install PyTorch separately with CUDA 12.8+ support before installing other requirements:
+# 
+# For RTX 50 series, install PyTorch nightly with CUDA 12.8:
 # pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu128
+#
+# For older GPUs, you can install a standard version:
+# pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118

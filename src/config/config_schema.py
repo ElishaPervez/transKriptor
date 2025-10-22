@@ -24,8 +24,9 @@ class TranscriptionConfig(BaseModel):
     # Audio settings
     sample_rate: int = 16000
     chunk_duration: float = 0.5  # 500ms chunks
-    vad_enabled: bool = True
-    vad_threshold: float = 0.01
+    vad_enabled: bool = True  # This now controls faster-whisper's VAD
+    vad_threshold: float = 0.01  # Not used when using faster-whisper's VAD
+    use_faster_whisper_vad: bool = True  # Whether to use faster-whisper's built-in VAD
     
     # Transcription settings
     language: str = "auto"  # auto, en, es, fr, etc.
