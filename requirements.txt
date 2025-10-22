@@ -1,0 +1,33 @@
+# Core dependencies
+numpy>=1.21.0
+torch>=2.0.0  # NOTE: For RTX 50 series, use nightly builds or custom build with CUDA 12.8+
+faster-whisper>=0.10.0
+transformers>=4.21.0
+tokenizers>=0.12.1
+sounddevice>=0.4.6
+PyAudio>=0.2.11
+librosa>=0.10.0
+
+# UI dependencies
+PyQt5>=5.15.0
+
+# Hotkey handling
+pynput>=1.7.6
+
+# Utilities
+pydantic>=1.10.0
+requests>=2.28.0
+
+# Optional: For enhanced GPU performance
+onnxruntime-gpu>=1.15.0; sys_platform == "win32"
+onnxruntime>=1.15.0; sys_platform != "win32"
+
+# Optional: For TensorRT optimization (NVIDIA GPUs)
+tensorrt>=8.6.0; sys_platform == "win32"
+
+# Installation notes for RTX 50 series support:
+# For RTX 50 series (Blackwell architecture), PyTorch stable releases do not yet include support
+# You will need to:
+# 1. Use PyTorch nightly builds with CUDA 12.8+
+# 2. OR build PyTorch from source with CUDA 12.8+
+# 3. OR wait for official support in PyTorch 2.8+ (expected release)
