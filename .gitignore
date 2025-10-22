@@ -136,3 +136,15 @@ test_config.json
 
 # Model cache
 .cache/
+
+# Auto-push batch files (local use only)
+1.bat
+2.bat
+*.bat
+
+# Sensitive files
+.env.local
+credentials.json
+secrets.json
+config.local.json
+.claude/settings.local.json
